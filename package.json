@@ -1,0 +1,12 @@
+{
+  "name": "basin",
+  "version": "1.0.0",
+  "description": "Free, open, county-level calculator for data center water use.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "serve": "python3 -m http.server 5207"
+  }
+}

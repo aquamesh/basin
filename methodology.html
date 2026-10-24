@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Basin · Method and sources</title>
+  <meta name="description" content="How Basin estimates a data center's water use: the formulas, every parameter with its source, the data sets, and the limitations.">
+  <meta property="og:title" content="Basin · Method and sources">
+  <meta property="og:description" content="Every formula, parameter and data source behind Basin's data center water estimates.">
+  <meta property="og:image" content="https://aquamesh.github.io/basin/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    try {
+      const q = new URLSearchParams(location.search).get('theme');
+      const t = q === 'light' || q === 'dark' ? q : localStorage.getItem('basin-theme');
+      if (t) document.documentElement.dataset.theme = t;
+    } catch (e) {}
+  </script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="./" aria-label="Basin home">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3c4.6 6.2 9 11.2 9 16a9 9 0 0 1-18 0c0-4.8 4.4-9.8 9-16z" fill="var(--accent)"/><path d="M8.6 21.5c2.3 1.5 4.7 1.5 7.4 0s5.1-1.5 7.4 0" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" opacity=".9"/></svg>
+        <span>Basin <small>data center water</small></span>
+      </a>
+      <nav class="nav" aria-label="Main">
+        <a class="hide-sm" href="./">Calculator</a>
+        <a href="methodology.html" aria-current="page">Method &amp; sources</a>
+        <a class="hide-sm" href="https://github.com/aquamesh/basin">GitHub</a>
+        <button class="theme-btn" id="themeBtn" type="button" aria-label="Toggle dark mode">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <article class="prose">
+      <h1>Method and sources</h1>
+      <p class="lead">Basin turns three facts about a proposed data center (its size, where it is, and how it is cooled) into a water estimate. It uses basic physics and parameters from published measurements. This page lists every formula, parameter and data set so anyone can check the numbers or argue with them.</p>
+
+      <h2>What Basin is, and what it isn't</h2>
+      <p>Basin is a screening estimate. It tells you whether a project is likely to need thousands, hundreds of thousands, or millions of gallons on a hot day, and how that compares with the water local public systems deliver. It is <b>not</b> a substitute for the facility's design documents, a utility's capacity analysis, or a hydrogeologic study. When the developer publishes real numbers, use them. The “Check a water claim” box exists to test exactly those numbers.</p>
+
+      <h2>The calculation</h2>
+      <h3>1. IT load from the announced size</h3>
+      <p>Announcements usually give a campus's total power (“a 300 MW data center”). Basin converts that to the power used by servers (the IT load) with the facility's power usage effectiveness (PUE):</p>
+      <div class="formula">IT MW = announced MW ÷ PUE        (if the figure is total power)
+IT MW = announced MW              (if the figure is IT load)</div>
+      <p>When the cooling designs are compared, the figure you enter stays fixed. A 300 MW campus stays at 300 MW of total power whatever it uses, so lower-water designs leave less of that power for computing. If you enter IT load instead, the computing stays fixed and lower-water designs draw more power. “Ways to cut it” reports the extra electricity each design needs for the same computing.</p>
+
+      <h3>2. Annual energy and heat</h3>
+      <div class="formula">IT energy (kWh/yr)       = IT MW × 1,000 × 8,760 h × average load
+Facility energy (kWh/yr) = IT energy × PUE
+Heat to remove (kWh/yr)  = facility energy</div>
+      <p>Almost all electricity a data center uses ends up as heat. Treating all of it as heat the cooling system must remove slightly overstates the load (a few percent of losses, such as outdoor transformers, are shed elsewhere). The default average load is <span data-param="util"></span> of the announced capacity. Lawrence Berkeley National Laboratory (LBNL) assumes data centers use about 50% of their grid interconnection on average, and the California Energy Commission uses 67%. You can change it under “Advanced assumptions”.</p>
+
+      <h3>3. Water evaporated and water drawn</h3>
+      <p>Evaporating water absorbs about 2,430 kJ per kg at 30 °C, so removing 1 kWh of heat purely by evaporation takes about <b>1.48 liters</b>. Each cooling design evaporates a different share of the year's heat:</p>
+      <div class="formula">Evaporated (L/yr) = heat × annual evaporative share × 1.48 L/kWh
+Water drawn (L/yr) = evaporated × C ÷ (C − 1)</div>
+      <p>C is the <b>cycles of concentration</b>: how many times cooling-tower water is reused before minerals build up and some is flushed out as blowdown. EPA and the Department of Energy describe two to four cycles as common and six or more as possible with good treatment. Going from 3 to 6 cycles cuts water drawn by 20%. The default is <span data-param="cycles"></span>. Water drawn is what the facility takes from its source (withdrawal). The evaporated part is lost to the air (consumption); the blowdown goes to a sewer or treatment plant. Closed-loop designs have no blowdown term.</p>
+
+      <h3>4. The peak day</h3>
+      <p>Water use is seasonal, and utilities size pipes and plants for the maximum day. Basin multiplies the average day by a peak-day ratio measured from utility meter data, then caps the result at what physics allows on a very hot day (1.25 times the full heat load evaporated, because hot, dry air also gives up heat to the water):</p>
+      <div class="formula">Peak day = min( average day × peak ratio,  daily heat × 1.25 × 1.48 L/kWh × C ÷ (C − 1) )</div>
+
+      <h3>5. Water at power plants</h3>
+      <div class="formula">Off-site water (L/yr) = facility energy × state water intensity (L/kWh)</div>
+      <p>The state water intensity is water consumed by thermoelectric power plants for cooling in that state (EIA, 2024) divided by all electricity generated there. The U.S. value is <span data-param="offsiteUs"></span> L/kWh. It excludes evaporation from hydropower reservoirs. Studies that include it, such as LBNL 2024, put the U.S. average near 4.4 L/kWh, which would make the off-site bars about five times longer. A data center's power often comes from outside its state, so treat the off-site bar as indicative. The range shown is <span data-param="spread"></span> of the state value.</p>
+
+      <h3>6. Local context</h3>
+      <ul>
+        <li><b>Homes:</b> average daily water ÷ 300 gallons, EPA WaterSense's figure for an average American family's daily use at home.</li>
+        <li><b>Share of the county's public water supply:</b> the facility's average (and peak) day divided by the water public systems deliver to people in the county. That is the population served by public supply in the county × the state's public-supply gallons per person per day, from USGS's 2015 county water-use compilation. This counts water where it is used rather than where it is pumped, which matters in counties that import their water. It is not the capacity of any one utility.</li>
+        <li><b>Groundwater:</b> when the source is wells, the average day is compared with all fresh groundwater pumped in the county for every use (USGS 2015).</li>
+        <li><b>Drought now:</b> the share of the county in each U.S. Drought Monitor category for the latest weekly map. The badge shows the worst category that covers at least 20% of the county.</li>
+        <li><b>Long-term water stress:</b> WRI Aqueduct 4.0 baseline water stress for the watershed (HydroBASINS level 6) containing the county's internal point. Large counties can span several watersheds.</li>
+      </ul>
+
+      <h3>7. Checking a claim</h3>
+      <p>Basin converts a stated figure into the share of the facility's heat it could remove by evaporation:</p>
+      <div class="formula">Peak-day claim:  share = claim ÷ (facility MW × 24,000 kWh × 1.48 L/kWh × C ÷ (C − 1))      (full load)
+Annual claim:    share = claim ÷ (annual heat × 1.48 L/kWh × C ÷ (C − 1))</div>
+      <p>Peak-day claims are assumed to describe the maximum day at full build-out, so full load is used. The share is then matched to the designs that produce it:</p>
+      <table>
+        <thead><tr><th>Implied share</th><th>Peak-day claim</th><th>Annual claim</th></tr></thead>
+        <tbody>
+          <tr><td>Closed-loop or air-cooled</td><td class="n">under 5%</td><td class="n">under 3%</td></tr>
+          <tr><td>Hybrid, or evaporative for part of the heat</td><td class="n">5–60%</td><td class="n">3% to the climate's hybrid/evaporative boundary</td></tr>
+          <tr><td>Mostly evaporative</td><td class="n">60–130%</td><td class="n">boundary to 115%</td></tr>
+          <tr><td>More than evaporative cooling of the whole site</td><td class="n">over 130%</td><td class="n">over 115%</td></tr>
+        </tbody>
+      </table>
+      <p>Common reasons a figure looks wrong: it is for one phase while the MW figure is for the whole campus, or the reverse. It may be an annual average quoted as if it were a peak. It may count staff use only (for example, 30 gallons per employee). It may leave out the one-time fill of a closed loop, which is often millions of gallons. Or it may be a contract cap rather than expected use.</p>
+
+      <h2>Parameters</h2>
+      <p>Values are low / central / high. The low and high cases bracket design and operating differences among real facilities. They are not statistical confidence intervals. These tables are generated from the same <code>model.js</code> file the calculator runs.</p>
+      <h3>Power usage effectiveness</h3>
+      <div id="t-pue"></div>
+      <p>Sources: Google 1.09 (2024–25), Meta 1.08, AWS 1.14–1.15, Microsoft 1.16–1.17 (operator reports); LBNL 2024 report, AI facilities 1.14 and hyperscale 1.22 (2023); Uptime Institute 2025 survey, facilities of 20 MW or more 1.44. Air-cooled and closed-loop designs need more fan and compressor energy.</p>
+
+      <h3>Annual share of heat removed by evaporation</h3>
+      <div id="t-evap"></div>
+      <h3>Resulting water-usage effectiveness (L per kWh of IT energy, at default cycles)</h3>
+      <div id="t-wue"></div>
+      <p>These were calibrated against published values (all in liters per kWh of IT energy):</p>
+      <ul>
+        <li>LBNL 2024 report, Fig. 4.4, large facilities: cooling towers with water-side economizers 1.7 / 2.2 / 2.8; dry coolers with adiabatic assist 0 / 0.25 / 0.58; air-cooled chillers about 0.</li>
+        <li>Google's tower-cooled fleet: about 1.0 L/kWh consumed (about 1.3 withdrawn), from its 2025 and 2026 environmental reports.</li>
+        <li>Microsoft's WUE by state: Arizona 1.63, Washington 0.95, Illinois 0.74, Texas 0.25, Iowa and Virginia 0.14 (reported in Li et al., <i>Making AI Less “Thirsty”</i>).</li>
+        <li>Fleets that mostly use evaporative air cooling: AWS 0.12–0.15, Meta 0.19, Microsoft 0.27–0.30 (withdrawal basis, operator reports).</li>
+      </ul>
+
+      <h3>Peak-day ratio (maximum day ÷ average day)</h3>
+      <div id="t-peak"></div>
+      <p>Source: Han, Li, Wierman and Ren, <i>Small Bottle, Big Pipe</i> (2026 preprint, arXiv 2603.02705), from utility meter data. Cooling towers: Phoenix peak month ÷ average month 1.46 (implying a peak day of at least 2.2); The Dalles water zone 2.21. Adiabatic assist: Northern Virginia aggregate 3.5–3.7, Prince William Water 10 (2024), an Iowa hyperscale site at least 6.45, Leesburg about 8.</p>
+
+      <h3>Climate classes</h3>
+      <div id="t-climate"></div>
+      <p>County climate zones are IECC/ASHRAE 169 zones (pre-2021 edition) from the Building America county list, via a public CSV. A few counties created since then use their state's most common zone.</p>
+
+      <h2>Data</h2>
+      <table>
+        <thead><tr><th>Data</th><th>Vintage</th><th>Used for</th></tr></thead>
+        <tbody>
+          <tr><td><a href="https://doi.org/10.5066/F7TB15V5">USGS, Estimated Use of Water in the United States, county-level data for 2015</a></td><td>2015 (latest county release)</td><td>Population on public supply, public-supply use per person, groundwater withdrawals</td></tr>
+          <tr><td><a href="https://droughtmonitor.unl.edu/">U.S. Drought Monitor</a> county statistics</td><td>Updated weekly</td><td>Drought now</td></tr>
+          <tr><td><a href="https://www.wri.org/data/aqueduct-global-maps-40-data">WRI Aqueduct 4.0</a> baseline water stress, joined to <a href="https://www.hydrosheds.org/products/hydrobasins">HydroBASINS</a> level 6</td><td>2023</td><td>Long-term water stress</td></tr>
+          <tr><td><a href="https://www.eia.gov/electricity/data/water/">EIA thermoelectric cooling water</a> and <a href="https://www.eia.gov/electricity/data/state/">state generation</a></td><td>2024</td><td>Water at power plants</td></tr>
+          <tr><td><a href="https://www.census.gov/geographies/reference-files/time-series/geo/gazetteer-files.html">Census Gazetteer</a> counties and places; place-to-county relationship file; 2024 population estimates</td><td>2025 / 2020 / 2024</td><td>Search, names, locations</td></tr>
+          <tr><td>IECC climate zones by county (<a href="https://gist.github.com/philngo/d3e251040569dba67942">CSV</a> of the Building America list)</td><td>Pre-2021</td><td>Climate class</td></tr>
+        </tbody>
+      </table>
+      <p>Connecticut replaced its counties with planning regions in 2022, after USGS's 2015 release, so Basin estimates public supply there from 2024 population and the state's 2015 per-person use. <span id="built"></span></p>
+
+      <h2>Limitations</h2>
+      <ul>
+        <li><b>Design matters more than anything Basin can see.</b> Two campuses of the same size in the same county can differ tenfold depending on cooling, water treatment and operating choices. That's why Basin shows ranges and asks which cooling system will be used.</li>
+        <li><b>Announced megawatts are fuzzy.</b> They may describe grid capacity, IT capacity, one phase or the full build-out.</li>
+        <li><b>USGS county data is from 2015.</b> Fast-growing counties use more water today. USGS has not released a newer county-level compilation.</li>
+        <li><b>Water at power plants is approximate.</b> It uses state averages, the electricity may come from elsewhere, and hydropower reservoir evaporation is excluded.</li>
+        <li><b>Construction water and the initial fill of closed loops are not included.</b> Neither is water for on-site power generation (some campuses plan their own gas turbines) or landscaping.</li>
+        <li><b>The model ignores water quality.</b> Hard or salty source water forces lower cycles of concentration and more blowdown. Reclaimed water often runs at lower cycles than potable water.</li>
+      </ul>
+
+      <h2>Use, cite, improve</h2>
+      <p>Basin is open source under the MIT license. Cite it as: <i>Basin data center water calculator, AquaMesh (2026), https://aquamesh.github.io/basin</i>. Better data, real facility numbers and corrections are welcome as <a href="https://github.com/aquamesh/basin/issues">GitHub issues</a>. Everything runs in your browser, and nothing you enter is sent anywhere.</p>
+      <p class="src">Built by <a href="https://aquamesh.ai">AquaMesh</a>. AquaMesh builds water and cooling optimization software for industrial sites and data centers. Basin's estimates use only the public sources above.</p>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div><a href="./">Back to the calculator</a> · <a href="https://github.com/aquamesh/basin">Open source (MIT)</a></div>
+      <div>Built by <a href="https://aquamesh.ai">AquaMesh</a>, water intelligence for industry and data centers.</div>
+    </div>
+  </footer>
+
+  <script type="module">
+    import * as M from './model.js';
+    const P = M.PARAMS;
+    const climates = Object.keys(M.CLIMATES);
+    const coolings = Object.keys(M.COOLING);
+    const fmt = (a, d = 2) => a.map((x) => Number(x).toFixed(d)).join(' / ');
+    const table = (head, rows) => `<table><thead><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c, i) => `<td${i ? ' class="n"' : ''}>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    document.getElementById('t-pue').innerHTML = table(['Cooling', 'PUE'], coolings.map((c) => [M.COOLING[c].label, fmt(P.pue[c])]));
+    document.getElementById('t-evap').innerHTML = table(['Climate', ...coolings.map((c) => M.COOLING[c].short)], climates.map((k) => [M.CLIMATES[k].label, ...coolings.map((c) => fmt(P.annualEvapFraction[c][k], c === 'dry' ? 3 : 2))]));
+    document.getElementById('t-wue').innerHTML = table(['Climate', ...coolings.map((c) => M.COOLING[c].short)], climates.map((k) => [M.CLIMATES[k].label, ...coolings.map((c) => {
+      const r = M.estimateCooling({ mw: 100, basis: 'it', cooling: c, climate: k, cycles: P.defaultCycles });
+      return fmt([r.low.wue, r.central.wue, r.high.wue], c === 'dry' ? 3 : 2);
+    })]));
+    document.getElementById('t-peak').innerHTML = table(['Climate', ...coolings.map((c) => M.COOLING[c].short)], climates.map((k) => [M.CLIMATES[k].label, ...coolings.map((c) => fmt(P.peakRatio[c][k], 1))]));
+    document.getElementById('t-climate').innerHTML = table(['Class', 'IECC zones'], climates.map((k) => [M.CLIMATES[k].label, M.CLIMATES[k].zones.join(', ')]));
+    const set = (k, v) => document.querySelectorAll(`[data-param="${k}"]`).forEach((el) => { el.textContent = v; });
+    set('util', Math.round(P.defaultUtil * 100) + '%');
+    set('cycles', String(P.defaultCycles));
+    set('spread', P.indirectSpread.map((x) => Math.round(x * 100) + '%').join(' / '));
+    set('offsiteUs', String(P.indirectUs));
+    fetch('data/counties.json').then((r) => r.json()).then((j) => {
+      const m = j.meta;
+      document.getElementById('built').textContent = `County data built ${m.built}; power-plant data EIA ${m.eiaYear} (U.S. ${m.offsiteUs} L/kWh).`;
+    }).catch(() => {});
+    document.getElementById('themeBtn').addEventListener('click', () => {
+      const root = document.documentElement;
+      const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+      root.dataset.theme = dark ? 'light' : 'dark';
+      try { localStorage.setItem('basin-theme', root.dataset.theme); } catch (e) {}
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Basin · Data center water calculator</title>
+  <meta name="description" content="How much water will a proposed data center use, and what does it mean for the local supply? A free, open, county-level calculator. Every assumption is visible and sourced.">
+  <meta property="og:title" content="Basin · How much water will this data center use?">
+  <meta property="og:description" content="Free, open, county-level calculator for residents, officials, journalists and developers. Fact-check a developer's water claim in seconds.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://aquamesh.github.io/basin/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://aquamesh.github.io/basin/assets/og.png">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    try {
+      const q = new URLSearchParams(location.search).get('theme');
+      const t = q === 'light' || q === 'dark' ? q : localStorage.getItem('basin-theme');
+      if (t) document.documentElement.dataset.theme = t;
+    } catch (e) {}
+  </script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="./" aria-label="Basin home">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3c4.6 6.2 9 11.2 9 16a9 9 0 0 1-18 0c0-4.8 4.4-9.8 9-16z" fill="var(--accent)"/><path d="M8.6 21.5c2.3 1.5 4.7 1.5 7.4 0s5.1-1.5 7.4 0" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" opacity=".9"/></svg>
+        <span>Basin <small>data center water</small></span>
+      </a>
+      <nav class="nav" aria-label="Main">
+        <a class="hide-sm" href="./" aria-current="page">Calculator</a>
+        <a href="methodology.html">Method &amp; sources</a>
+        <a class="hide-sm" href="https://github.com/aquamesh/basin">GitHub</a>
+        <button class="theme-btn" id="themeBtn" type="button" aria-label="Toggle dark mode">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <h1>How much water will this data center use?</h1>
+      <p>Pick a county, enter the size, and get an estimate of the facility's water draw next to the local supply. You can also check a developer's water claim. It's free, open source, and every assumption is shown with its source.</p>
+      <div class="chips" id="examples" aria-label="Examples"></div>
+    </section>
+
+    <div class="grid">
+      <!-- ============ INPUTS ============ -->
+      <form class="card inputs" id="form" autocomplete="off" onsubmit="return false">
+        <h2>The project</h2>
+        <p class="sub">Use whatever the developer or news coverage says. Leave anything you don't know as “not disclosed”.</p>
+
+        <div class="field">
+          <label class="label" for="place">Where <span class="hint">county or city</span></label>
+          <div class="ac">
+            <input class="input" id="place" type="text" placeholder="e.g. Waco, TX or Pima County" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="placeList" spellcheck="false">
+            <ul class="ac-list" id="placeList" role="listbox" hidden></ul>
+          </div>
+          <div id="placeChip"></div>
+        </div>
+
+        <div class="field">
+          <label class="label" for="mw">Size <span class="hint">megawatts</span></label>
+          <div class="row">
+            <input class="input" id="mw" type="number" inputmode="decimal" min="1" max="10000" step="any" value="300" aria-describedby="mwHelp">
+          </div>
+          <div class="seg" role="group" aria-label="What the MW figure measures" style="margin-top:8px">
+            <button type="button" data-basis="facility" aria-pressed="true">Total power</button>
+            <button type="button" data-basis="it" aria-pressed="false">IT load</button>
+          </div>
+          <p class="help" id="mwHelp">Announcements usually give total power (“a 300 MW campus”). Pick IT load only if that's what was stated.</p>
+        </div>
+
+        <fieldset class="field" style="border:0;padding:0;margin-inline:0">
+          <legend class="label">Cooling</legend>
+          <div class="options" id="cooling">
+            <label class="option"><input type="radio" name="cooling" value="unknown" checked><div><b>Not disclosed</b><span>Shows the full range. This is the most common situation.</span></div></label>
+            <label class="option"><input type="radio" name="cooling" value="evaporative"><div><b>Evaporative / cooling towers</b><span>Evaporates water to reject heat. Most water, least electricity.</span></div></label>
+            <label class="option"><input type="radio" name="cooling" value="hybrid"><div><b>Hybrid / adiabatic</b><span>Dry most of the year; sprays water on hot days.</span></div></label>
+            <label class="option"><input type="radio" name="cooling" value="dry"><div><b>Closed-loop / air-cooled</b><span>Little or no water for cooling, but more electricity.</span></div></label>
+          </div>
+        </fieldset>
+
+        <div class="field">
+          <label class="label" for="source">Water source</label>
+          <select class="select" id="source">
+            <option value="unknown">Not disclosed</option>
+            <option value="potable">City / utility water</option>
+            <option value="groundwater">Groundwater wells</option>
+            <option value="surface">River or lake</option>
+            <option value="reclaimed">Reclaimed wastewater</option>
+          </select>
+        </div>
+
+        <details class="adv" id="adv">
+          <summary>Advanced assumptions</summary>
+          <div class="field">
+            <label class="label" for="util">Average load <span class="hint">share of capacity in use</span></label>
+            <div class="range-row"><input type="range" id="util" min="40" max="95" step="5" value="65"><output id="utilOut">65%</output></div>
+            <p class="help">Campuses rarely run at their full announced power. Federal and state studies assume 50–67% on average.</p>
+          </div>
+          <div class="field">
+            <label class="label" for="cycles">Cycles of concentration <span class="hint">towers only</span></label>
+            <div class="range-row"><input type="range" id="cycles" min="2" max="10" step="0.5" value="4"><output id="cyclesOut">4</output></div>
+            <p class="help">How many times tower water is reused before it's flushed (blowdown). Higher means less water drawn.</p>
+          </div>
+          <div class="field">
+            <label class="label" for="pue">PUE <span class="hint">blank = typical for the cooling type</span></label>
+            <input class="input" id="pue" type="number" inputmode="decimal" min="1.03" max="2.5" step="0.01" placeholder="auto">
+          </div>
+        </details>
+      </form>
+
+      <!-- ============ RESULTS ============ -->
+      <div id="results" aria-live="polite">
+        <div class="card empty" id="emptyState">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3c4.6 6.2 9 11.2 9 16a9 9 0 0 1-18 0c0-4.8 4.4-9.8 9-16z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+          <p style="margin-top:12px">Choose a county or city to see the estimate.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div>Basin is an estimate, not an engineering study. Data: USGS, U.S. Drought Monitor, WRI Aqueduct, U.S. Census, LBNL. <a href="methodology.html">Method &amp; sources</a> · <a href="https://github.com/aquamesh/basin">Open source (MIT)</a></div>
+      <div>Built by <a href="https://aquamesh.ai">AquaMesh</a>, water intelligence for industry and data centers.</div>
+    </div>
+  </footer>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
