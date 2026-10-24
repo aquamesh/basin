@@ -10,7 +10,7 @@
   <meta property="og:image" content="https://aquamesh.github.io/basin/assets/og.png">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=20261024a">
   <script>
     try {
       const q = new URLSearchParams(location.search).get('theme');
@@ -161,7 +161,7 @@ Annual claim:    share = claim ÷ (annual heat × 1.48 L/kWh × C ÷ (C − 1))<
   </footer>
 
   <script type="module">
-    import * as M from './model.js';
+    import * as M from './model.js?v=20261024a';
     const P = M.PARAMS;
     const climates = Object.keys(M.CLIMATES);
     const coolings = Object.keys(M.COOLING);

@@ -1,5 +1,5 @@
-import * as M from './model.js';
-import { EXAMPLES } from './examples.js';
+import * as M from './model.js?v=20261024a';
+import { EXAMPLES } from './examples.js?v=20261024a';
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
