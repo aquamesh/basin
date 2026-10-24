@@ -125,7 +125,10 @@ function writeHash() {
   if (state.claimValue) { p.set('claim', String(state.claimValue)); p.set('claimKind', state.claimKind); }
   if (state.placeLabel) p.set('place', state.placeLabel);
   history.replaceState(null, '', '#' + p.toString());
+  lastHash = location.hash;
 }
+let lastHash = '';
+const DEFAULTS = { ...state };
 
 function readHash() {
   const p = new URLSearchParams(location.hash.slice(1));
@@ -266,6 +269,7 @@ function update() {
     leversCard(input, county, r),
     questionsCard(input, county),
     shareCard(),
+    embedAttrib(),
   ].join('');
   wireResults();
   if (claimOpen) { const el = $('#claimValue'); el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
@@ -480,15 +484,22 @@ function questionsCard(input, county) {
 }
 
 function shareCard() {
-  return `<section class="card"><h2>Share this estimate</h2><p class="sub">The link reproduces every input. The image works on social posts and slides.</p>
+  return `<section class="card share-card"><h2>Share this estimate</h2><p class="sub">The link reproduces every input. The image works on social posts and slides.</p>
     <div class="actions">
       <button class="btn primary" type="button" id="copyLink">${icon('link')}Copy link</button>
       <button class="btn" type="button" id="dlImg">${icon('image')}Download image</button>
       <button class="btn" type="button" id="copyText">${icon('copy')}Copy summary</button>
       <button class="btn" type="button" id="printBtn">${icon('print')}Print</button>
+      <button class="btn" type="button" id="embedBtn">${icon('code')}Embed</button>
     </div>
     <p class="src">Estimates come from engineering relationships and published ranges, not from the facility's design. <a href="methodology.html">How it works</a>.</p>
   </section>`;
+}
+
+function embedAttrib() {
+  if (!document.documentElement.classList.contains('embed')) return '';
+  const full = location.href.replace(/[?&]embed(=[^&#]*)?/, '').replace(/\?(#|$)/, '$1');
+  return `<div class="embed-attrib"><span>Estimate by Basin, an open-source data center water calculator.</span><a href="${esc(full)}" target="_blank" rel="noopener">Open the full calculator ↗</a></div>`;
 }
 
 function icon(name) {
@@ -500,6 +511,7 @@ function icon(name) {
     link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
     image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5L5 20"/>',
     print: '<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>',
+    code: '<path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/>',
   }[name];
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
 }
@@ -514,6 +526,11 @@ function wireResults() {
   $('#copyLink')?.addEventListener('click', () => copy(location.href, 'Link copied'));
   $('#copyText')?.addEventListener('click', () => copy(summaryText(), 'Summary copied'));
   $('#printBtn')?.addEventListener('click', () => window.print());
+  $('#embedBtn')?.addEventListener('click', () => {
+    const u = new URL(location.href);
+    u.searchParams.set('embed', '1');
+    copy(`<iframe src="${u.toString()}" title="Data center water estimate (Basin)" width="100%" height="1400" style="border:0;max-width:820px" loading="lazy"></iframe>`, 'Embed code copied');
+  });
   $('#dlImg')?.addEventListener('click', downloadImage);
   const chart = $('#chart');
   if (chart) {
@@ -634,4 +651,13 @@ function fitText(ctx, text, x, y, maxW, size, font, weight) {
   }
   syncForm();
   update();
+  // A pasted link in the same tab only changes the hash, so re-read it.
+  window.addEventListener('hashchange', () => {
+    if (location.hash === lastHash) return;
+    Object.assign(state, DEFAULTS);
+    $('#place').value = '';
+    readHash();
+    syncForm();
+    update();
+  });
 })();

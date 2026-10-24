@@ -18,6 +18,7 @@
       const q = new URLSearchParams(location.search).get('theme');
       const t = q === 'light' || q === 'dark' ? q : localStorage.getItem('basin-theme');
       if (t) document.documentElement.dataset.theme = t;
+      if (new URLSearchParams(location.search).has('embed')) document.documentElement.classList.add('embed');
     } catch (e) {}
   </script>
 </head>
