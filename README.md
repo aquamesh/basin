@@ -1,6 +1,6 @@
 # Basin: how much water will this data center use?
 
-**[aquamesh.github.io/basin](https://aquamesh.github.io/basin)**
+**[aquamesh.ai/basin](https://aquamesh.ai/basin/)**
 
 Basin is a free, open calculator for the question showing up at county hearings all over the U.S. in 2026. Pick any of the 3,222 U.S. counties, enter the project's size and (if known) its cooling system and water source. You get:
 
@@ -21,7 +21,7 @@ Basin uses public data and basic physics to give everyone at the table the same 
 
 ## How it works
 
-The full method is in **[methodology.html](https://aquamesh.github.io/basin/methodology.html)**, every parameter has a source, and the tables on that page are generated from the same `model.js` the calculator runs. In short:
+The full method is in **[methodology.html](https://aquamesh.ai/basin/methodology.html)**, every parameter has a source, and the tables on that page are generated from the same `model.js` the calculator runs. In short:
 
 ```
 IT energy        = IT MW × 8,760 h × average load

@@ -8,9 +8,16 @@
   <meta property="og:title" content="Basin · How much water will this data center use?">
   <meta property="og:description" content="Free, open, county-level calculator for residents, officials, journalists and developers. Fact-check a developer's water claim in seconds.">
   <meta property="og:type" content="website">
-  <meta property="og:image" content="https://aquamesh.github.io/basin/assets/og.png">
+  <meta property="og:image" content="https://aquamesh.ai/basin/assets/og.png">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:image" content="https://aquamesh.github.io/basin/assets/og.png">
+  <meta name="twitter:image" content="https://aquamesh.ai/basin/assets/og.png">
+  <script>
+    /* The canonical home is aquamesh.ai/basin/; the github.io copy forwards there. */
+    if (location.hostname === 'aquamesh.github.io') location.replace('https://aquamesh.ai/basin/' + location.pathname.replace(/^\/basin\/?/, '') + location.search + location.hash);
+  </script>
+  <link rel="canonical" href="https://aquamesh.ai/basin/">
+  <meta property="og:url" content="https://aquamesh.ai/basin/">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Basin","url":"https://aquamesh.ai/basin/","description":"Free, open, county-level calculator: how much water a proposed data center will use, and what it means for the local supply.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any (web browser)","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"license":"https://opensource.org/licenses/MIT","creator":{"@type":"Organization","name":"AquaMesh","url":"https://aquamesh.ai"}}</script>
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css?v=20261024a">
   <script>
